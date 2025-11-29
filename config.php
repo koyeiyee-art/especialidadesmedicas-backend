@@ -1,39 +1,38 @@
 <?php
 session_start();
 
-// Database configuration using Railway environment variables
-$host = getenv('MYSQLHOST') ?: 'interchange.proxy.rlwy.net';
-$port = getenv('MYSQLPORT') ?: '33933';
-$database = getenv('MYSQLDATABASE') ?: 'especialidades';
-$username = getenv('MYSQLUSER') ?: 'root';
-$password = getenv('MYSQLPASSWORD') ?: 'IvXqoRMzqDxfgYmnKmXsQauIgURfoGwH';
+// Parse Railway MySQL URL
+$mysql_url = getenv('MYSQL_PUBLIC_URL') ?: 'mysql://root:IvXqoRMzqDxfgYmnKmXsQauIgURfoGwH@interchange.proxy.rlwy.net:33933/railway';
+$url_parts = parse_url($mysql_url);
 
-// Create connection
-$conn = new mysqli($host, $username, $password, $database, $port);
+define('DB_HOST', $url_parts['host'] . ':' . $url_parts['port']);
+define('DB_USER', $url_parts['user']);
+define('DB_PASS', $url_parts['pass']);
+define('DB_NAME', ltrim($url_parts['path'], '/'));
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Set charset
-$conn->set_charset("utf8mb4");
-
-// Admin credentials (you can change these)
+// Admin credentials - Change these!
 define('ADMIN_USERNAME', 'admin');
-define('ADMIN_PASSWORD', 'admin123'); // CHANGE THIS TO A SECURE PASSWORD
+define('ADMIN_PASSWORD', 'admin123'); // Use password_hash() for production!
 
-// Function to check if user is logged in
-function requireLogin() {
-    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-        header('Location: index.php');
-        exit;
+// Create database connection
+function getDB() {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
     }
+    return $conn;
 }
 
-// Function to get database connection
-function getDB() {
-    global $conn;
-    return $conn;
+// Check if user is logged in
+function isLoggedIn() {
+    return isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+}
+
+// Redirect if not logged in
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header('Location: index.php');
+        exit();
+    }
 }
 ?>
