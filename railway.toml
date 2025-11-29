@@ -3,4 +3,6 @@ builder = "nixpacks"
 nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
-startCommand = "php -S 0.0.0.0:$PORT -t ."
+startCommand = "php -S 0.0.0.0:${PORT:-8080} -t ."
+healthcheckPath = "/debug.php"
+healthcheckTimeout = 100
